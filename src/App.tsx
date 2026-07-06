@@ -215,8 +215,13 @@ export default function App() {
               const appName = apps.find(a => a.id === id)?.name || 'Application';
               showToast(`Installed successfully: ${appName}`, 'success');
 
-              // Remove from active downloads queue
-              delete copy[id];
+              // Set status to completed in the downloads queue
+              copy[id] = {
+                ...current,
+                progress: 100,
+                speed: 'Completed',
+                status: 'completed'
+              };
             } else {
               copy[id] = {
                 ...current,

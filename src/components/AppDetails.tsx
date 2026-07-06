@@ -119,35 +119,65 @@ export default function AppDetails({
       );
     }
 
-    if (isDownloaded) {
-      return (
-        <button
-          onClick={() => onLaunch(app.id)}
-          className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg hover:shadow-emerald-500/20 active:scale-98 transition flex items-center justify-center gap-2 tracking-wide uppercase"
-        >
-          <Play className="w-4.5 h-4.5 fill-current" />
-          <span>Launch App Emulator</span>
-        </button>
-      );
-    }
+    const showProgress = downloadStatus !== null;
+    const isDownloading = downloadStatus?.status === 'downloading';
+    const isCompleted = isDownloaded || downloadStatus?.status === 'completed';
 
-    if (downloadStatus?.status === 'downloading') {
+    if (showProgress || isCompleted) {
+      const progressValue = isCompleted ? 100 : (downloadStatus?.progress || 0);
+      const speedValue = isCompleted ? 'Completed' : (downloadStatus?.speed || 'Connecting...');
+
       return (
-        <div className="w-full sm:w-auto min-w-[200px] flex flex-col gap-1.5 p-1">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-zinc-400 font-semibold flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping" />
-              Downloading...
-            </span>
-            <span className="font-mono text-indigo-400 font-bold">{downloadStatus.progress}%</span>
+        <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-800/60 flex-1">
+          {/* Progress Bar Info */}
+          <div className="flex-1 flex flex-col gap-1.5 min-w-[180px]">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-zinc-400 font-semibold flex items-center gap-1.5">
+                {isCompleted ? (
+                  <>
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-emerald-400 font-bold">Download Completed</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping" />
+                    <span>Downloading App...</span>
+                  </>
+                )}
+              </span>
+              <span className={`font-mono font-bold ${isCompleted ? 'text-emerald-400' : 'text-indigo-400'}`}>
+                {progressValue}%
+              </span>
+            </div>
+            
+            <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden border border-zinc-700/50">
+              <div 
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isCompleted 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]' 
+                    : 'bg-gradient-to-r from-indigo-500 to-indigo-400'
+                }`} 
+                style={{ width: `${progressValue}%` }}
+              />
+            </div>
+            
+            <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono mt-0.5">
+              <span>{isCompleted ? 'Verified Sandbox' : speedValue}</span>
+              <span>{app.size}</span>
+            </div>
           </div>
-          <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden border border-zinc-700/50">
-            <div 
-              className="bg-gradient-to-r from-indigo-500 to-indigo-400 h-full rounded-full transition-all duration-300" 
-              style={{ width: `${downloadStatus.progress}%` }}
-            />
-          </div>
-          <span className="text-[10px] text-zinc-500 font-mono text-right">{downloadStatus.speed}</span>
+
+          {/* Launch Button immediately when finishes or isCompleted */}
+          {isCompleted && (
+            <button
+              onClick={() => onLaunch(app.id)}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg hover:shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2 tracking-wide uppercase shrink-0"
+              id="btn-launch-completed"
+            >
+              <Play className="w-4 h-4 fill-current text-white-forced" />
+              <span className="text-white-forced">Launch Emulator</span>
+            </button>
+          )}
         </div>
       );
     }
@@ -348,92 +378,133 @@ export default function AppDetails({
           </button>
         </div>
 
-        {/* Dynamic Review Submission Form */}
+        {/* Detailed Review Submission Modal Flow */}
         {showReviewForm && (
-          <form 
-            onSubmit={handleReviewSubmit} 
-            className="p-5 bg-zinc-900/80 border border-indigo-500/30 rounded-2xl space-y-4 animate-fade-in"
-          >
-            <h4 className="text-xs font-bold text-zinc-200 uppercase tracking-wide">Write Custom App Review</h4>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            {/* Dark blur backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity duration-300" 
+              onClick={() => setShowReviewForm(false)}
+            />
             
-            {reviewSuccess ? (
-              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4.5 h-4.5" />
-                <span>Review submitted successfully! Updating average rating log...</span>
+            {/* Modal Card */}
+            <div className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800/80 rounded-3xl shadow-2xl overflow-hidden scale-100 animate-in fade-in zoom-in-95 duration-250 p-6 sm:p-7 text-zinc-100">
+              
+              <div className="flex justify-between items-center mb-5 pb-3 border-b border-zinc-800/60">
+                <div>
+                  <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+                    <MessageSquarePlus className="w-4 h-4 text-indigo-400" />
+                    <span>Create Detailed Review</span>
+                  </h3>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
+                    Sharing feedback for <b className="text-zinc-200 font-semibold">{app.name}</b>
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setShowReviewForm(false)}
+                  className="p-1.5 rounded-lg bg-zinc-950/40 border border-zinc-800 text-zinc-400 hover:text-white transition cursor-pointer"
+                  type="button"
+                  aria-label="Close detailed review modal"
+                >
+                  <span className="text-sm font-bold block leading-none px-1">✕</span>
+                </button>
               </div>
-            ) : (
-              <div className="space-y-3 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Username / Name</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Maisie Clarke"
-                      value={revName}
-                      onChange={e => setRevName(e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-indigo-500 focus:outline-none text-zinc-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Score Rating (1-5)</label>
-                    <div className="flex items-center gap-1 mt-1">
-                      {[1, 2, 3, 4, 5].map(val => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setRevRating(val)}
-                          className="p-1 hover:scale-110 transition"
-                        >
-                          <Star className={`w-6 h-6 ${val <= revRating ? 'fill-amber-400 text-amber-400' : 'text-zinc-600'}`} />
-                        </button>
-                      ))}
+
+              <form onSubmit={handleReviewSubmit} className="space-y-4 text-xs">
+                {reviewSuccess ? (
+                  <div className="py-8 px-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center flex flex-col items-center justify-center gap-3">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-400 animate-bounce" />
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-zinc-100 text-sm">Review Submitted Successfully!</h4>
+                      <p className="text-[10px] text-zinc-400">Your rating contribution has been synchronized to the store database ledger.</p>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Star selection block with descriptive label */}
+                    <div className="p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800/80 text-center space-y-2">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">
+                        How would you rate your overall experience?
+                      </label>
+                      <div className="flex justify-center items-center gap-2.5 py-1">
+                        {[1, 2, 3, 4, 5].map(val => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setRevRating(val)}
+                            className="p-1.5 rounded-lg hover:bg-zinc-900/80 transition active:scale-90"
+                            title={`Rate ${val} Stars`}
+                          >
+                            <Star className={`w-7 h-7 transition duration-150 ${val <= revRating ? 'fill-amber-400 text-amber-400 scale-105' : 'text-zinc-600 hover:text-zinc-400'}`} />
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wide block h-4">
+                        {revRating === 1 && '⭐ Poor - Disappointing'}
+                        {revRating === 2 && '⭐⭐ Fair - Mediocre'}
+                        {revRating === 3 && '⭐⭐⭐ Good - Solid App'}
+                        {revRating === 4 && '⭐⭐⭐⭐ Very Good - Highly Recommend'}
+                        {revRating === 5 && '⭐⭐⭐⭐⭐ Excellent - Near Perfect'}
+                      </span>
+                    </div>
 
-                <div>
-                  <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Review Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Brief summary of your experience"
-                    value={revTitle}
-                    onChange={e => setRevTitle(e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-indigo-500 focus:outline-none text-zinc-100"
-                  />
-                </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1.5">Username / Name</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Maisie Clarke"
+                          value={revName}
+                          onChange={e => setRevName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-zinc-100 transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1.5">Review Headline</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Brief summary of your feedback"
+                          value={revTitle}
+                          onChange={e => setRevTitle(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-zinc-100 transition"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Detailed Comment</label>
-                  <textarea
-                    required
-                    rows={3}
-                    placeholder="Tell other users why they should or shouldn't download this application..."
-                    value={revComment}
-                    onChange={e => setRevComment(e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-indigo-500 focus:outline-none text-zinc-100 resize-none"
-                  />
-                </div>
+                    <div>
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1.5">Written User Feedback</label>
+                      <textarea
+                        required
+                        rows={4}
+                        placeholder="Tell other users why they should or shouldn't download this app, what you liked, or suggest features..."
+                        value={revComment}
+                        onChange={e => setRevComment(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-zinc-100 resize-none leading-relaxed transition"
+                      />
+                    </div>
 
-                <div className="flex justify-end gap-2.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowReviewForm(false)}
-                    className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold shadow-lg transition"
-                  >
-                    Publish Review
-                  </button>
-                </div>
-              </div>
-            )}
-          </form>
+                    <div className="flex items-center gap-2.5 pt-3 border-t border-zinc-800/60 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewForm(false)}
+                        className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold transition active:scale-95 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold shadow-lg shadow-indigo-500/10 transition active:scale-95 cursor-pointer"
+                      >
+                        Publish Review
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </form>
+            </div>
+          </div>
         )}
 
         {/* Reviews List */}

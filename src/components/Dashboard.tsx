@@ -48,6 +48,34 @@ export default function Dashboard({
   const [newCvv, setNewCvv] = useState('');
   const [cardError, setCardError] = useState('');
 
+  // Recent Searches State
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const cached = localStorage.getItem('neoappstore_recent_searches_v1');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveRecentSearch = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    
+    setRecentSearches(prev => {
+      const filtered = prev.filter(s => s.toLowerCase() !== trimmed.toLowerCase());
+      const next = [trimmed, ...filtered].slice(0, 3);
+      localStorage.setItem('neoappstore_recent_searches_v1', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      saveRecentSearch(searchQuery);
+    }
+  };
+
   // Format new credit card (16 digits)
   const handleCardFormat = (e: React.ChangeEvent<HTMLInputElement>) => {
     let raw = e.target.value.replace(/\D/g, '').slice(0, 16);
@@ -171,36 +199,86 @@ export default function Dashboard({
         )}
 
         {/* Filter Controls Row */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-          {/* Custom Tabs */}
-          <div className="flex flex-nowrap overflow-x-auto gap-1.5 pb-1 sm:pb-0 scrollbar-none">
-            {(['All', 'Games', 'Productivity', 'Creative', 'Finance'] as const).map(cat => (
-              <button
-                key={cat}
-                onClick={() => onCategoryChange(cat)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition whitespace-nowrap ${
-                  activeCategory === cat 
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/10' 
-                    : 'bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 text-zinc-400'
-                }`}
-              >
-                {cat !== 'All' && getCategoryIcon(cat)}
-                <span>{cat}</span>
-              </button>
-            ))}
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+            {/* Custom Tabs */}
+            <div className="flex flex-nowrap overflow-x-auto gap-1.5 pb-1 sm:pb-0 scrollbar-none">
+              {(['All', 'Games', 'Productivity', 'Creative', 'Finance'] as const).map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => onCategoryChange(cat)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition whitespace-nowrap ${
+                    activeCategory === cat 
+                      ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/10' 
+                      : 'bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 text-zinc-400'
+                  }`}
+                >
+                  {cat !== 'All' && getCategoryIcon(cat)}
+                  <span>{cat}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Search box */}
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-zinc-500 absolute left-3.5" />
+              <input
+                type="text"
+                placeholder="Search app... (Press Enter to save)"
+                value={searchQuery}
+                onChange={e => onSearchChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full sm:w-60 text-xs pl-9.5 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl focus:border-indigo-500 focus:outline-none text-zinc-200 placeholder-zinc-600 transition"
+              />
+            </div>
           </div>
 
-          {/* Search box */}
-          <div className="relative flex items-center">
-            <Search className="w-4 h-4 text-zinc-500 absolute left-3.5" />
-            <input
-              type="text"
-              placeholder="Search store application..."
-              value={searchQuery}
-              onChange={e => onSearchChange(e.target.value)}
-              className="w-full sm:w-60 text-xs pl-9.5 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl focus:border-indigo-500 focus:outline-none text-zinc-200 placeholder-zinc-600 transition"
-            />
-          </div>
+          {/* Recent Searches Panel */}
+          {recentSearches.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 pt-0.5 px-0.5">
+              <span className="font-semibold text-[11px] tracking-wide text-zinc-400 uppercase">Recent:</span>
+              <div className="flex flex-wrap gap-2">
+                {recentSearches.map((search, idx) => (
+                  <span 
+                    key={idx} 
+                    className="inline-flex items-center bg-zinc-900/60 border border-zinc-800/80 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all group/tag text-zinc-300 hover:text-indigo-400"
+                  >
+                    <button
+                      onClick={() => {
+                        onSearchChange(search);
+                        saveRecentSearch(search);
+                      }}
+                      className="cursor-pointer font-medium"
+                    >
+                      {search}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRecentSearches(prev => {
+                          const next = prev.filter((_, i) => i !== idx);
+                          localStorage.setItem('neoappstore_recent_searches_v1', JSON.stringify(next));
+                          return next;
+                        });
+                      }}
+                      className="ml-1.5 text-zinc-600 hover:text-rose-400 p-0.5 transition cursor-pointer flex items-center justify-center rounded-md"
+                      title="Delete query"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  setRecentSearches([]);
+                  localStorage.removeItem('neoappstore_recent_searches_v1');
+                }}
+                className="text-[10px] text-zinc-500 hover:text-rose-400 font-semibold uppercase tracking-wider ml-auto transition cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Apps Grids Layout */}
