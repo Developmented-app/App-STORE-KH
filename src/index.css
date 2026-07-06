@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-zinc-950: #09090b;
+  --color-zinc-900: #18181b;
+  --color-zinc-800: #27272a;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-600: #52525b;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-50: #fafafa;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+.light {
+  --color-zinc-950: #f9fafb;
+  --color-zinc-900: #ffffff;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-600: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #52525b;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-200: #27272a;
+  --color-zinc-100: #18181b;
+  --color-zinc-50: #09090b;
+  
+  color-scheme: light;
+}
+
+/* Light mode specific fine-tuning */
+.light .text-white {
+  color: #09090b;
+}
+
+/* Keep white text on primary buttons or badges even in light mode */
+.light .bg-indigo-600 .text-white,
+.light .bg-indigo-500 .text-white,
+.light .bg-emerald-500 .text-white,
+.light .bg-emerald-600 .text-white,
+.light .bg-gradient-to-tr .text-white,
+.light button.bg-indigo-600,
+.light button.bg-emerald-600,
+.light .text-white-forced {
+  color: #ffffff !important;
+}

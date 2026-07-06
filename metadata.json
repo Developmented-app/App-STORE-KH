@@ -1,0 +1,6 @@
+{
+  "name": "Mobile App Store with Secure Checkout & Simulator",
+  "description": "App store featuring downloadable mobile apps (Zen Clicker, CalcLite, PixelArt Canvas, CryptoTrade Simulator, ByteNote), user reviews/ratings, and a secure payment gateway with card verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
