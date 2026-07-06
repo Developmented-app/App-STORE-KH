@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { 
   Search, Grid, Gamepad2, Calculator, Palette, TrendingUp, Notebook, 
   Download, Play, Smartphone, Wallet, ShieldCheck, Plus, Check, Award, 
-  ExternalLink, Sparkles, CreditCard, X, AlertCircle
+  ExternalLink, Sparkles, CreditCard, X, AlertCircle, Heart
 } from 'lucide-react';
 import { AppItem, AppCategory, ActiveDownload, UserWallet, PaymentCard } from '../types';
 
@@ -15,10 +15,11 @@ interface DashboardProps {
   apps: AppItem[];
   wallet: UserWallet;
   downloadingApps: { [key: string]: ActiveDownload };
-  activeCategory: AppCategory | 'All';
+  activeCategory: AppCategory | 'All' | 'Wishlist';
   searchQuery: string;
+  wishlist: string[];
   onSelectApp: (app: AppItem) => void;
-  onCategoryChange: (cat: AppCategory | 'All') => void;
+  onCategoryChange: (cat: AppCategory | 'All' | 'Wishlist') => void;
   onSearchChange: (query: string) => void;
   onDownload: (appId: string) => void;
   onLaunch: (appId: string) => void;
@@ -32,6 +33,7 @@ export default function Dashboard({
   downloadingApps,
   activeCategory,
   searchQuery,
+  wishlist,
   onSelectApp,
   onCategoryChange,
   onSearchChange,
@@ -186,13 +188,15 @@ No actual currency has been or will be debited.
       case 'Productivity': return <Calculator className="w-4 h-4" />;
       case 'Creative': return <Palette className="w-4 h-4" />;
       case 'Finance': return <TrendingUp className="w-4 h-4" />;
+      case 'Wishlist': return <Heart className="w-4 h-4 text-rose-400 fill-rose-400" />;
       default: return <Notebook className="w-4 h-4" />;
     }
   };
 
   // Curate filtered applications
   const filteredApps = apps.filter(app => {
-    const matchesCat = activeCategory === 'All' || app.category === activeCategory;
+    const matchesCat = activeCategory === 'All' || 
+                       (activeCategory === 'Wishlist' ? wishlist.includes(app.id) : app.category === activeCategory);
     const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           app.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           app.developer.toLowerCase().includes(searchQuery.toLowerCase());
@@ -265,7 +269,7 @@ No actual currency has been or will be debited.
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
             {/* Custom Tabs */}
             <div className="flex flex-nowrap overflow-x-auto gap-1.5 pb-1 sm:pb-0 scrollbar-none">
-              {(['All', 'Games', 'Productivity', 'Creative', 'Finance'] as const).map(cat => (
+              {(['All', 'Games', 'Productivity', 'Creative', 'Finance', 'Wishlist'] as const).map(cat => (
                 <button
                   key={cat}
                   onClick={() => onCategoryChange(cat)}

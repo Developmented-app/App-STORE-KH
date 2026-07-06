@@ -25,8 +25,18 @@ export default function App() {
   const [activeApp, setActiveApp] = useState<AppItem | null>(null);
 
   // Filters State
-  const [activeCategory, setActiveCategory] = useState<'All' | AppItem['category']>('All');
+  const [activeCategory, setActiveCategory] = useState<'All' | AppItem['category'] | 'Wishlist'>('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Wishlist State
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    try {
+      const cached = localStorage.getItem('neoappstore_wishlist_v1');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Downloading Progress state
   const [downloadingApps, setDownloadingApps] = useState<{ [key: string]: ActiveDownload }>({});
@@ -124,6 +134,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(wallet));
   }, [wallet]);
+
+  useEffect(() => {
+    localStorage.setItem('neoappstore_wishlist_v1', JSON.stringify(wishlist));
+  }, [wishlist]);
 
   // Synchronize detailed app view with latest reviews
   useEffect(() => {
@@ -301,6 +315,21 @@ export default function App() {
     showToast(`Linked payment card successfully!`, 'success');
   };
 
+  const handleToggleWishlist = (appId: string) => {
+    setWishlist(prev => {
+      const isAdded = prev.includes(appId);
+      let next;
+      if (isAdded) {
+        next = prev.filter(id => id !== appId);
+        showToast('Removed from Wishlist', 'info');
+      } else {
+        next = [...prev, appId];
+        showToast('Added to Wishlist', 'success');
+      }
+      return next;
+    });
+  };
+
   // Get active running app name
   const runningAppName = apps.find(a => a.id === runningAppId)?.name || '';
 
@@ -394,6 +423,8 @@ export default function App() {
             isPurchased={!activeApp.isPremium || wallet.purchaseHistory.includes(activeApp.id)}
             isDownloaded={wallet.downloadedHistory.includes(activeApp.id)}
             userEmail={userEmail}
+            wishlist={wishlist}
+            onToggleWishlist={handleToggleWishlist}
             onBack={() => setActiveApp(null)}
             onDownload={handleDownloadTrigger}
             onLaunch={setRunningAppId}
@@ -408,6 +439,7 @@ export default function App() {
             downloadingApps={downloadingApps}
             activeCategory={activeCategory}
             searchQuery={searchQuery}
+            wishlist={wishlist}
             onSelectApp={setActiveApp}
             onCategoryChange={setActiveCategory}
             onSearchChange={setSearchQuery}

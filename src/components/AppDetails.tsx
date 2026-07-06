@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { 
   ArrowLeft, Star, Download, Play, CheckCircle2, ThumbsUp, 
-  MessageSquarePlus, ShieldCheck, Info, Sparkles, ChevronRight, Award, Share2, Link
+  MessageSquarePlus, ShieldCheck, Info, Sparkles, ChevronRight, Award, Share2, Link, Heart
 } from 'lucide-react';
 import { AppItem, Review, ActiveDownload } from '../types';
 
@@ -16,6 +16,8 @@ interface AppDetailsProps {
   isPurchased: boolean;
   isDownloaded: boolean;
   userEmail: string;
+  wishlist: string[];
+  onToggleWishlist: (appId: string) => void;
   onBack: () => void;
   onDownload: (appId: string) => void;
   onLaunch: (appId: string) => void;
@@ -29,6 +31,8 @@ export default function AppDetails({
   isPurchased,
   isDownloaded,
   userEmail,
+  wishlist,
+  onToggleWishlist,
   onBack,
   onDownload,
   onLaunch,
@@ -302,11 +306,25 @@ export default function AppDetails({
             
             <button
               onClick={handleShare}
-              className="px-6 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white font-bold text-xs rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2 tracking-wide uppercase"
+              className="px-6 py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white font-bold text-xs rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2 tracking-wide uppercase cursor-pointer"
               id="btn-share-hero"
             >
               <Share2 className="w-4 h-4 text-indigo-400" />
               <span>Share App</span>
+            </button>
+
+            <button
+              onClick={() => onToggleWishlist(app.id)}
+              className={`px-6 py-3.5 rounded-xl border font-bold text-xs shadow-md active:scale-98 transition flex items-center justify-center gap-2 tracking-wide uppercase cursor-pointer ${
+                wishlist.includes(app.id)
+                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800/80 text-zinc-300 hover:text-white'
+              }`}
+              id="btn-wishlist-toggle"
+              title={wishlist.includes(app.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+            >
+              <Heart className={`w-4 h-4 transition duration-150 ${wishlist.includes(app.id) ? 'fill-rose-500 text-rose-500 scale-105' : 'text-zinc-400'}`} />
+              <span>{wishlist.includes(app.id) ? 'In Wishlist' : 'Wishlist'}</span>
             </button>
           </div>
         </div>
