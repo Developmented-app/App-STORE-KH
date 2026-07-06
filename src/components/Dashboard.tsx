@@ -117,6 +117,68 @@ export default function Dashboard({
     setShowAddCard(false);
   };
 
+  const handleDownloadLedger = () => {
+    let totalSpent = 0;
+    let itemsList = '';
+    
+    wallet.purchaseHistory.forEach((appId, index) => {
+      const app = apps.find(a => a.id === appId);
+      const appName = app ? app.name : 'Unknown Application';
+      const category = app ? app.category : 'N/A';
+      const price = app ? app.price : 0;
+      const priceStr = price === 0 ? 'FREE' : `$${price.toFixed(2)}`;
+      totalSpent += price;
+      
+      itemsList += `${String(index + 1).padStart(2, ' ')}. [${appId.padEnd(16, ' ')}] | ${appName.padEnd(25, ' ')} | ${category.padEnd(12, ' ')} | ${priceStr}\n`;
+    });
+
+    let cardsList = '';
+    wallet.paymentCards.forEach((card, index) => {
+      cardsList += `${index + 1}. ${card.cardType} (${card.cardNumber}) - EXP ${card.expiryDate} - Holder: ${card.cardholderName}\n`;
+    });
+
+    const dateStr = new Date().toLocaleString('en-US', { timeZone: 'UTC' });
+
+    const content = `========================================================
+             NEO-SLATE STORE TRANSACTION LEDGER
+========================================================
+Generated At: ${dateStr} UTC (Sandbox Session)
+Account Owner: Maisie Clarke
+Linked Email: maisieclarke506@gmail.com
+Current Wallet Balance: $${wallet.balance.toFixed(2)} (Simulated)
+
+--------------------------------------------------------
+                    LICENSE CATALOG LOGS
+--------------------------------------------------------
+No.  App Identifier     | App Name                  | Category     | License Price
+--------------------------------------------------------
+${itemsList || 'No purchased licenses found.\n'}
+--------------------------------------------------------
+Total Items Purchased: ${wallet.purchaseHistory.length}
+Total Value of License Acquisitions: $${totalSpent.toFixed(2)}
+--------------------------------------------------------
+                    LINKED PAYMENT METHOD(S)
+--------------------------------------------------------
+${cardsList || 'No linked payment methods in wallet.\n'}
+========================================================
+Sandbox Notice:
+All transactions, credit cards, and licenses simulated
+using Neo-Slate Sandbox v2.4 protocol specifications.
+No actual currency has been or will be debited.
+========================================================
+`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `neo_slate_transaction_ledger_${Date.now()}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Categories helper to map icon
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -501,6 +563,18 @@ export default function Dashboard({
                 </div>
               ))
             )}
+          </div>
+
+          {/* Download Ledger Button */}
+          <div className="border-t border-zinc-800/60 pt-3">
+            <button
+              onClick={handleDownloadLedger}
+              className="w-full py-2.5 px-4 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white font-bold text-[11px] rounded-xl transition active:scale-98 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              id="download-ledger-btn"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Download Transaction Ledger</span>
+            </button>
           </div>
 
           <div className="p-2.5 bg-zinc-950/40 rounded-xl border border-zinc-800/40 text-[9px] text-zinc-500 leading-normal flex items-start gap-1.5">
